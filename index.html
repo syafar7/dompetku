@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="description" content="DompetKu - Aplikasi Kelola Keuangan Pribadi Mingguan">
+<title>DompetKu - Kelola Keuangan</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--green:#22c55e;--green-bg:#dcfce7;--yellow:#f59e0b;--yellow-bg:#fef3c7;--red:#ef4444;--red-bg:#fee2e2;--bg:#f1f5f9;--card:#fff;--text:#1e293b;--text2:#64748b;--border:#e2e8f0;--shadow:0 1px 3px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.06);--shadow-md:0 4px 12px rgba(0,0,0,.08);--radius:16px;--nav-h:64px}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text);max-width:430px;margin:0 auto;min-height:100vh;position:relative;overflow-x:hidden}
+.app{padding-bottom:calc(var(--nav-h) + 16px)}
+
+/* Pages */
+.page{display:none;padding:16px 16px 8px;animation:fadeUp .3s ease}
+.page.active{display:block}
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+
+/* Header */
+.header{padding:20px 16px 12px;background:linear-gradient(135deg,#0f766e,#14b8a6);color:#fff;position:sticky;top:0;z-index:10}
+.header h1{font-size:20px;font-weight:800;letter-spacing:-.5px}
+.header p{font-size:12px;opacity:.85;margin-top:2px}
+
+/* Cards */
+.card{background:var(--card);border-radius:var(--radius);padding:16px;margin-bottom:12px;box-shadow:var(--shadow);border:1px solid var(--border)}
+.card-title{font-size:13px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px}
+
+/* Progress Bar */
+.progress-wrap{margin:8px 0}
+.progress-label{display:flex;justify-content:space-between;font-size:12px;color:var(--text2);margin-bottom:4px}
+.progress-bar{height:10px;background:#e2e8f0;border-radius:8px;overflow:hidden;position:relative}
+.progress-fill{height:100%;border-radius:8px;transition:width .6s cubic-bezier(.4,0,.2,1);position:relative}
+.progress-fill.green{background:linear-gradient(90deg,#22c55e,#4ade80)}
+.progress-fill.yellow{background:linear-gradient(90deg,#f59e0b,#fbbf24)}
+.progress-fill.red{background:linear-gradient(90deg,#ef4444,#f87171)}
+.progress-mark{position:absolute;top:-2px;bottom:-2px;width:2px;background:var(--text);opacity:.3;border-radius:1px}
+
+/* Status Banner */
+.status-banner{padding:12px;border-radius:12px;display:flex;align-items:center;gap:10px;font-size:13px;font-weight:600;margin-bottom:12px}
+.status-banner.safe{background:var(--green-bg);color:#15803d}
+.status-banner.warn{background:var(--yellow-bg);color:#92400e}
+.status-banner.danger{background:var(--red-bg);color:#991b1b}
+.status-banner .icon{font-size:20px;flex-shrink:0}
+
+/* Stats Grid */
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.stat{background:var(--card);border-radius:12px;padding:14px;border:1px solid var(--border);text-align:center}
+.stat .val{font-size:18px;font-weight:700;margin-bottom:2px}
+.stat .lbl{font-size:11px;color:var(--text2);font-weight:500}
+.stat.green .val{color:#16a34a}
+.stat.red .val{color:#dc2626}
+.stat.yellow .val{color:#d97706}
+
+/* Form */
+.form-group{margin-bottom:14px}
+.form-group label{display:block;font-size:13px;font-weight:600;color:var(--text2);margin-bottom:6px}
+.form-group input,.form-group select,.form-group textarea{width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:12px;font-size:15px;font-family:inherit;background:#fff;color:var(--text);transition:border .2s}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{outline:none;border-color:#14b8a6;box-shadow:0 0 0 3px rgba(20,184,166,.15)}
+.form-group textarea{resize:none;height:60px}
+
+.btn-primary{width:100%;padding:14px;background:linear-gradient(135deg,#0f766e,#14b8a6);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;font-family:inherit;cursor:pointer;transition:transform .15s,box-shadow .15s;box-shadow:var(--shadow)}
+.btn-primary:active{transform:scale(.97)}
+
+/* Category Pills */
+.cat-pills{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.cat-pill{padding:6px 14px;border-radius:20px;font-size:12px;font-weight:600;border:1.5px solid var(--border);background:#fff;cursor:pointer;transition:all .2s}
+.cat-pill.active{background:#0f766e;color:#fff;border-color:#0f766e}
+
+/* Transaction List */
+.tx-item{display:flex;align-items:center;padding:12px 0;border-bottom:1px solid var(--border);gap:10px}
+.tx-item:last-child{border-bottom:none}
+.tx-icon{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.tx-icon.Makan{background:#fef3c7}
+.tx-icon.Transport{background:#dbeafe}
+.tx-icon.Belanja{background:#fce7f3}
+.tx-icon.Hiburan{background:#ede9fe}
+.tx-icon.Lainnya{background:#e2e8f0}
+.tx-info{flex:1;min-width:0}
+.tx-info .name{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tx-info .meta{font-size:11px;color:var(--text2)}
+.tx-amount{font-size:14px;font-weight:700;color:#dc2626;white-space:nowrap}
+.tx-del{background:none;border:none;color:#94a3b8;font-size:18px;cursor:pointer;padding:4px;margin-left:4px}
+.tx-del:active{color:#ef4444}
+
+/* Empty State */
+.empty{text-align:center;padding:32px 16px;color:var(--text2)}
+.empty .em-icon{font-size:40px;margin-bottom:8px}
+.empty p{font-size:13px}
+
+/* Week Selector */
+.week-tabs{display:flex;gap:6px;overflow-x:auto;padding:4px 0;margin-bottom:12px;-webkit-overflow-scrolling:touch}
+.week-tabs::-webkit-scrollbar{display:none}
+.week-tab{padding:8px 14px;border-radius:10px;font-size:12px;font-weight:600;white-space:nowrap;border:1.5px solid var(--border);background:#fff;cursor:pointer;flex-shrink:0;transition:all .2s}
+.week-tab.active{background:#0f766e;color:#fff;border-color:#0f766e}
+
+/* Monthly Summary */
+.month-row{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--border);font-size:14px}
+.month-row:last-child{border-bottom:none}
+.month-row .wk{font-weight:600}
+.month-row .amt{font-weight:700}
+.summary-total{background:linear-gradient(135deg,#0f766e,#14b8a6);color:#fff;border-radius:12px;padding:16px;text-align:center;margin-top:12px}
+.summary-total .big{font-size:24px;font-weight:800}
+.summary-total .sub{font-size:12px;opacity:.85;margin-top:2px}
+
+/* Bottom Nav */
+.bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;height:var(--nav-h);background:#fff;border-top:1px solid var(--border);display:flex;z-index:20;box-shadow:0 -2px 10px rgba(0,0,0,.05)}
+.nav-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer;color:var(--text2);transition:color .2s;-webkit-tap-highlight-color:transparent}
+.nav-item.active{color:#0f766e}
+.nav-item .ni-icon{font-size:22px;line-height:1}
+.nav-item .ni-label{font-size:10px;font-weight:600}
+
+/* Success Toast */
+.toast{position:fixed;top:80px;left:50%;transform:translateX(-50%) translateY(-20px);background:#15803d;color:#fff;padding:12px 24px;border-radius:12px;font-size:14px;font-weight:600;opacity:0;transition:all .3s ease;z-index:30;pointer-events:none;box-shadow:0 4px 16px rgba(0,0,0,.15)}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* Month Nav */
+.month-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.month-nav button{background:none;border:1.5px solid var(--border);border-radius:10px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text)}
+.month-nav .month-label{font-size:15px;font-weight:700}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>💰 DompetKu</h1>
+  <p id="headerDate"></p>
+</div>
+
+<div class="app">
+  <!-- Dashboard -->
+  <div class="page active" id="pgDash">
+    <div id="weekTabsDash" class="week-tabs"></div>
+    <div id="statusBanner" class="status-banner safe"><span class="icon">✅</span><span id="statusText">Aman</span></div>
+    <div class="card">
+      <div class="card-title">Pengeluaran Minggu Ini</div>
+      <div class="progress-wrap">
+        <div class="progress-label"><span id="plSpent">Rp 0</span><span id="plTarget">Target: Rp 350.000</span></div>
+        <div class="progress-bar"><div class="progress-fill green" id="pfMain" style="width:0%"></div><div class="progress-mark" id="pmTarget" style="left:70%"></div></div>
+      </div>
+      <div class="progress-wrap" style="margin-top:12px">
+        <div class="progress-label"><span>vs Batas Rp 500.000</span><span id="plPct2">0%</span></div>
+        <div class="progress-bar"><div class="progress-fill green" id="pfLimit" style="width:0%"></div></div>
+      </div>
+    </div>
+    <div class="stats">
+      <div class="stat green"><div class="val" id="stSisa">Rp 350.000</div><div class="lbl">Sisa Target</div></div>
+      <div class="stat green"><div class="val" id="stTabung">Rp 0</div><div class="lbl">Potensi Tabungan</div></div>
+      <div class="stat"><div class="val" id="stTx">0</div><div class="lbl">Transaksi</div></div>
+      <div class="stat"><div class="val" id="stAvg">Rp 0</div><div class="lbl">Rata-rata/Hari</div></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Pengeluaran per Kategori</div>
+      <div id="catBreakdown"></div>
+    </div>
+  </div>
+
+  <!-- Input -->
+  <div class="page" id="pgInput">
+    <div class="card">
+      <div class="card-title">Tambah Pengeluaran</div>
+      <div class="form-group"><label>Nominal (Rp)</label><input type="number" id="inNominal" placeholder="50000" inputmode="numeric"></div>
+      <div class="form-group"><label>Kategori</label><select id="inKat"><option>Makan</option><option>Transport</option><option>Belanja</option><option>Hiburan</option><option>Lainnya</option></select></div>
+      <div class="form-group"><label>Catatan (opsional)</label><textarea id="inNote" placeholder="Contoh: Makan siang warteg"></textarea></div>
+      <div class="form-group"><label>Tanggal</label><input type="date" id="inDate"></div>
+      <button class="btn-primary" onclick="addTx()">💾 Simpan Pengeluaran</button>
+    </div>
+  </div>
+
+  <!-- Riwayat -->
+  <div class="page" id="pgHistory">
+    <div id="weekTabsHist" class="week-tabs"></div>
+    <div class="cat-pills" id="filterPills"></div>
+    <div class="card"><div class="card-title">Riwayat Transaksi</div><div id="txList"></div></div>
+  </div>
+
+  <!-- Ringkasan -->
+  <div class="page" id="pgSummary">
+    <div class="month-nav">
+      <button onclick="changeMonth(-1)">‹</button>
+      <span class="month-label" id="monthLabel"></span>
+      <button onclick="changeMonth(1)">›</button>
+    </div>
+    <div class="card"><div class="card-title">Pengeluaran per Minggu</div><div id="weekSummary"></div></div>
+    <div id="summaryTotal" class="summary-total"><div class="sub">Total Potensi Tabungan Bulan Ini</div><div class="big" id="sumSaving">Rp 0</div></div>
+  </div>
+</div>
+
+<div class="toast" id="toast">✅ Berhasil disimpan!</div>
+
+<nav class="bottom-nav">
+  <div class="nav-item active" onclick="showPage('pgDash',this)"><span class="ni-icon">📊</span><span class="ni-label">Dashboard</span></div>
+  <div class="nav-item" onclick="showPage('pgInput',this)"><span class="ni-icon">✏️</span><span class="ni-label">Input</span></div>
+  <div class="nav-item" onclick="showPage('pgHistory',this)"><span class="ni-icon">📋</span><span class="ni-label">Riwayat</span></div>
+  <div class="nav-item" onclick="showPage('pgSummary',this)"><span class="ni-icon">📈</span><span class="ni-label">Ringkasan</span></div>
+</nav>
+
+<script>
+const TARGET=350000,LIMIT=500000;
+const CAT_ICONS={Makan:'🍽️',Transport:'🚗',Belanja:'🛒',Hiburan:'🎮',Lainnya:'📦'};
+const MONTHS=['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+let data=JSON.parse(localStorage.getItem('dompetku')||'[]');
+let filterCat='Semua';
+let viewMonth=new Date().getMonth(), viewYear=new Date().getFullYear();
+
+function save(){localStorage.setItem('dompetku',JSON.stringify(data))}
+function fmt(n){return 'Rp '+Number(n).toLocaleString('id-ID')}
+function getWeek(d){const day=d.getDate();if(day<=7)return 1;if(day<=14)return 2;if(day<=21)return 3;if(day<=28)return 4;return 5}
+function weekRange(w){return w===1?'1-7':w===2?'8-14':w===3?'15-21':w===4?'22-28':'29-31'}
+function daysInMonth(m,y){return new Date(y,m+1,0).getDate()}
+function weeksInMonth(m,y){return daysInMonth(m,y)>28?5:4}
+
+function getCurrentWeek(){return getWeek(new Date())}
+let activeWeekDash=getCurrentWeek(), activeWeekHist=getCurrentWeek();
+
+function showPage(id,el){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  if(el)el.classList.add('active');
+  if(id==='pgDash')renderDash();
+  if(id==='pgHistory')renderHistory();
+  if(id==='pgSummary')renderSummary();
+}
+
+function buildWeekTabs(containerId,activeW,cb){
+  const c=document.getElementById(containerId);
+  const now=new Date(), m=now.getMonth(), y=now.getFullYear();
+  const wc=weeksInMonth(m,y);
+  let h='';
+  for(let i=1;i<=wc;i++){
+    h+=`<div class="week-tab${i===activeW?' active':''}" onclick="(${cb.name})(${i})">Minggu ${i}<br><small style="font-weight:400;font-size:10px">Tgl ${weekRange(i)}</small></div>`;
+  }
+  c.innerHTML=h;
+}
+
+function setDashWeek(w){activeWeekDash=w;renderDash()}
+function setHistWeek(w){activeWeekHist=w;renderHistory()}
+
+function getTxForWeek(w,m,y){
+  return data.filter(t=>{
+    const d=new Date(t.date);
+    return d.getMonth()===m&&d.getFullYear()===y&&getWeek(d)===w;
+  });
+}
+
+function renderDash(){
+  const now=new Date(),m=now.getMonth(),y=now.getFullYear();
+  document.getElementById('headerDate').textContent=`${now.getDate()} ${MONTHS[m]} ${y} — Minggu ${getCurrentWeek()}`;
+  buildWeekTabs('weekTabsDash',activeWeekDash,setDashWeek);
+
+  const txs=getTxForWeek(activeWeekDash,m,y);
+  const total=txs.reduce((s,t)=>s+t.amount,0);
+  const pctTarget=Math.min((total/TARGET)*100,100);
+  const pctLimit=Math.min((total/LIMIT)*100,100);
+  const sisa=Math.max(TARGET-total,0);
+  const tabung=total<=TARGET?TARGET-total:0;
+
+  // Status
+  const sb=document.getElementById('statusBanner');
+  const st=document.getElementById('statusText');
+  if(total<=TARGET){sb.className='status-banner safe';st.textContent='Aman! Pengeluaranmu masih di bawah target hemat.';sb.querySelector('.icon').textContent='✅';}
+  else if(total<=LIMIT){sb.className='status-banner warn';st.textContent='Kamu melewati target hemat minggu ini, tapi masih dalam batas budget.';sb.querySelector('.icon').textContent='⚠️';}
+  else{sb.className='status-banner danger';st.textContent='Budget minggu ini sudah terlampaui!';sb.querySelector('.icon').textContent='🚨';}
+
+  // Progress
+  const pf=document.getElementById('pfMain');
+  pf.style.width=pctTarget+'%';
+  pf.className='progress-fill '+(total<=TARGET?'green':total<=LIMIT?'yellow':'red');
+  document.getElementById('plSpent').textContent=fmt(total);
+  document.getElementById('pmTarget').style.left='70%';
+
+  const pf2=document.getElementById('pfLimit');
+  pf2.style.width=pctLimit+'%';
+  pf2.className='progress-fill '+(total<=TARGET?'green':total<=LIMIT?'yellow':'red');
+  document.getElementById('plPct2').textContent=Math.round(pctLimit)+'%';
+
+  // Stats
+  document.getElementById('stSisa').textContent=fmt(sisa);
+  document.getElementById('stTabung').textContent=fmt(tabung);
+  document.getElementById('stTx').textContent=txs.length;
+  const days=activeWeekDash===5?daysInMonth(m,y)-28:7;
+  document.getElementById('stAvg').textContent=fmt(txs.length?Math.round(total/days):0);
+
+  // Stat colors
+  const sisStat=document.getElementById('stSisa').parentElement;
+  sisStat.className='stat '+(total<=TARGET?'green':total<=LIMIT?'yellow':'red');
+  const tabStat=document.getElementById('stTabung').parentElement;
+  tabStat.className='stat '+(tabung>0?'green':'');
+
+  // Category breakdown
+  const cats={};
+  txs.forEach(t=>{cats[t.category]=(cats[t.category]||0)+t.amount});
+  let ch='';
+  if(Object.keys(cats).length===0){ch='<div class="empty"><p>Belum ada pengeluaran</p></div>';}
+  else{
+    const sorted=Object.entries(cats).sort((a,b)=>b[1]-a[1]);
+    sorted.forEach(([k,v])=>{
+      const pct=total?Math.round(v/total*100):0;
+      ch+=`<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">
+        <span style="font-size:20px">${CAT_ICONS[k]||'📦'}</span>
+        <div style="flex:1"><div style="font-size:13px;font-weight:600">${k}</div>
+        <div style="height:5px;background:#e2e8f0;border-radius:4px;margin-top:4px"><div style="height:100%;width:${pct}%;background:linear-gradient(90deg,#14b8a6,#2dd4bf);border-radius:4px"></div></div></div>
+        <div style="text-align:right"><div style="font-size:13px;font-weight:700">${fmt(v)}</div><div style="font-size:10px;color:var(--text2)">${pct}%</div></div>
+      </div>`;
+    });
+  }
+  document.getElementById('catBreakdown').innerHTML=ch;
+}
+
+function addTx(){
+  const nom=parseInt(document.getElementById('inNominal').value);
+  if(!nom||nom<=0){alert('Masukkan nominal yang valid!');return}
+  const tx={
+    id:Date.now(),
+    amount:nom,
+    category:document.getElementById('inKat').value,
+    note:document.getElementById('inNote').value.trim(),
+    date:document.getElementById('inDate').value
+  };
+  data.push(tx);save();
+  document.getElementById('inNominal').value='';
+  document.getElementById('inNote').value='';
+  // Toast
+  const t=document.getElementById('toast');t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2000);
+}
+
+function deleteTx(id){
+  if(!confirm('Hapus transaksi ini?'))return;
+  data=data.filter(t=>t.id!==id);save();renderHistory();
+}
+
+function renderHistory(){
+  const now=new Date(),m=now.getMonth(),y=now.getFullYear();
+  buildWeekTabs('weekTabsHist',activeWeekHist,setHistWeek);
+
+  // Filter pills
+  const allCats=['Semua','Makan','Transport','Belanja','Hiburan','Lainnya'];
+  let ph='';
+  allCats.forEach(c=>{ph+=`<div class="cat-pill${c===filterCat?' active':''}" onclick="filterCat='${c}';renderHistory()">${c}</div>`;});
+  document.getElementById('filterPills').innerHTML=ph;
+
+  let txs=getTxForWeek(activeWeekHist,m,y);
+  if(filterCat!=='Semua')txs=txs.filter(t=>t.category===filterCat);
+  txs.sort((a,b)=>new Date(b.date)-new Date(a.date)||b.id-a.id);
+
+  if(!txs.length){
+    document.getElementById('txList').innerHTML='<div class="empty"><div class="em-icon">📭</div><p>Belum ada transaksi minggu ini</p></div>';
+    return;
+  }
+  let h='';
+  txs.forEach(t=>{
+    const d=new Date(t.date);
+    const ds=d.getDate()+' '+MONTHS[d.getMonth()].slice(0,3);
+    h+=`<div class="tx-item">
+      <div class="tx-icon ${t.category}">${CAT_ICONS[t.category]||'📦'}</div>
+      <div class="tx-info"><div class="name">${t.note||t.category}</div><div class="meta">${t.category} • ${ds}</div></div>
+      <div class="tx-amount">-${fmt(t.amount)}</div>
+      <button class="tx-del" onclick="deleteTx(${t.id})">✕</button>
+    </div>`;
+  });
+  document.getElementById('txList').innerHTML=h;
+}
+
+function renderSummary(){
+  document.getElementById('monthLabel').textContent=MONTHS[viewMonth]+' '+viewYear;
+  const wc=weeksInMonth(viewMonth,viewYear);
+  let h='',totalSaving=0;
+  for(let w=1;w<=wc;w++){
+    const txs=getTxForWeek(w,viewMonth,viewYear);
+    const total=txs.reduce((s,t)=>s+t.amount,0);
+    const saving=Math.max(TARGET-total,0);
+    totalSaving+=saving;
+    const color=total<=TARGET?'var(--green)':total<=LIMIT?'var(--yellow)':'var(--red)';
+    h+=`<div class="month-row"><span class="wk">Minggu ${w} <small style="color:var(--text2);font-weight:400">(Tgl ${weekRange(w)})</small></span><span class="amt" style="color:${color}">${fmt(total)}</span></div>`;
+  }
+  document.getElementById('weekSummary').innerHTML=h||'<div class="empty"><p>Tidak ada data</p></div>';
+  document.getElementById('sumSaving').textContent=fmt(totalSaving);
+}
+
+function changeMonth(dir){
+  viewMonth+=dir;
+  if(viewMonth>11){viewMonth=0;viewYear++}
+  if(viewMonth<0){viewMonth=11;viewYear--}
+  renderSummary();
+}
+
+// Init
+document.getElementById('inDate').value=new Date().toISOString().split('T')[0];
+renderDash();
+</script>
+</body>
+</html>
