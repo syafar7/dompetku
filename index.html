@@ -341,7 +341,7 @@ function renderDash(){
 
 function addTx(){
   const nom=parseInt(document.getElementById('inNominal').value);
-  if(!nom||nom<=0){alert('Masukkan nominal yang valid!');return}
+  if(isNaN(nom)||nom<0){alert('Masukkan nominal yang valid!');return}
   const dt=document.getElementById('inDate').value;
   if(!dt){alert('Pilih tanggal!');return}
   const tx={id:Date.now(),amount:nom,category:document.getElementById('inKat').value,note:document.getElementById('inNote').value.trim(),date:dt};
@@ -377,7 +377,7 @@ function closeEdit(){
 function saveEdit(){
   if(!editId)return;
   const nom=parseInt(document.getElementById('edNom').value);
-  if(!nom||nom<=0){alert('Nominal tidak valid!');return}
+  if(isNaN(nom)||nom<0){alert('Nominal tidak valid!');return}
   const idx=data.findIndex(t=>t.id===editId);
   if(idx===-1)return;
   data[idx].amount=nom;
