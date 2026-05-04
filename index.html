@@ -7,6 +7,8 @@
 <title>DompetKu - Kelola Keuangan</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 :root{--green:#22c55e;--green-bg:#dcfce7;--yellow:#f59e0b;--yellow-bg:#fef3c7;--red:#ef4444;--red-bg:#fee2e2;--bg:#f1f5f9;--card:#fff;--text:#1e293b;--text2:#64748b;--border:#e2e8f0;--shadow:0 1px 3px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.06);--shadow-md:0 4px 12px rgba(0,0,0,.08);--radius:16px;--nav-h:64px}
@@ -227,6 +229,20 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
 </nav>
 
 <script>
+// Firebase Config
+const firebaseConfig = {
+  apiKey: "AIzaSyC1r30HDqzHYumvgl0mm5Dour3YAzOf4pU",
+  authDomain: "dompetku-ad231.firebaseapp.com",
+  databaseURL: "https://dompetku-ad231-default-rtdb.firebaseio.com",
+  projectId: "dompetku-ad231",
+  storageBucket: "dompetku-ad231.firebasestorage.app",
+  messagingSenderId: "86146451883",
+  appId: "1:86146451883:web:165caa4d8b2372ca126aee"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+const dbRef = db.ref('transactions');
+
 const BUDGET_MONTH=2000000,BUDGET_WEEK=500000;
 const CAT_ICONS={Makan:'🍽️',Transport:'🚗',Belanja:'🛒',Hiburan:'🎮',Lainnya:'📦'};
 const MONTHS=['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
@@ -235,8 +251,26 @@ let data=JSON.parse(localStorage.getItem('dompetku')||'[]');
 let filterCat='Semua';
 let viewMonth=new Date().getMonth(),viewYear=new Date().getFullYear();
 let editId=null;
+let firebaseReady=false;
 
-function save(){localStorage.setItem('dompetku',JSON.stringify(data))}
+function save(){
+  localStorage.setItem('dompetku',JSON.stringify(data));
+  dbRef.set(data).catch(e=>console.error('Firebase save error:',e));
+}
+
+// Listen for realtime changes from Firebase
+dbRef.on('value', snap => {
+  const val = snap.val();
+  if(val && Array.isArray(val)){
+    data = val;
+    localStorage.setItem('dompetku',JSON.stringify(data));
+  } else if(val === null && !firebaseReady){
+    // First time: upload local data to Firebase
+    if(data.length > 0) dbRef.set(data);
+  }
+  firebaseReady = true;
+  renderDash();
+});
 function fmt(n){return'Rp '+Number(n).toLocaleString('id-ID')}
 function getWeek(d){const day=d.getDate();if(day<=7)return 1;if(day<=14)return 2;if(day<=21)return 3;if(day<=28)return 4;return 5}
 function weekRange(w){return w===1?'1-7':w===2?'8-14':w===3?'15-21':w===4?'22-28':'29-31'}
