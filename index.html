@@ -81,8 +81,25 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
 .tx-info .name{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .tx-info .meta{font-size:11px;color:var(--text2)}
 .tx-amount{font-size:14px;font-weight:700;color:#dc2626;white-space:nowrap}
-.tx-del{background:none;border:none;color:#94a3b8;font-size:18px;cursor:pointer;padding:4px;margin-left:4px}
-.tx-del:active{color:#ef4444}
+.tx-actions{display:flex;gap:2px;margin-left:4px}
+.tx-btn{background:none;border:none;font-size:16px;cursor:pointer;padding:4px;opacity:.5;transition:opacity .2s}
+.tx-btn:active{opacity:1}
+.tx-btn.del:active{color:#ef4444}
+.tx-btn.edit:active{color:#14b8a6}
+
+/* Date Group */
+.date-group{margin-top:12px}
+.date-group:first-child{margin-top:0}
+.date-header{font-size:13px;font-weight:700;color:var(--text2);padding:8px 0 4px;border-bottom:2px solid var(--border);margin-bottom:4px;display:flex;justify-content:space-between}
+.date-header .dtotal{color:#dc2626;font-weight:700;font-size:12px}
+
+/* Edit Modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:50;display:none;align-items:flex-end;justify-content:center}
+.modal-overlay.show{display:flex}
+.modal{background:#fff;border-radius:20px 20px 0 0;padding:24px 16px;width:100%;max-width:430px;animation:slideUp .3s ease}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.modal .card-title{margin-bottom:16px}
+.modal-close{background:none;border:none;font-size:24px;position:absolute;right:16px;top:16px;cursor:pointer}
 
 /* Empty State */
 .empty{text-align:center;padding:32px 16px;color:var(--text2)}
@@ -134,19 +151,19 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
     <div id="weekTabsDash" class="week-tabs"></div>
     <div id="statusBanner" class="status-banner safe"><span class="icon">✅</span><span id="statusText">Aman</span></div>
     <div class="card">
-      <div class="card-title">Pengeluaran Minggu Ini</div>
+      <div class="card-title">Budget Bulan Ini (Rp 2.000.000)</div>
       <div class="progress-wrap">
-        <div class="progress-label"><span id="plSpent">Rp 0</span><span id="plTarget">Target: Rp 350.000</span></div>
-        <div class="progress-bar"><div class="progress-fill green" id="pfMain" style="width:0%"></div><div class="progress-mark" id="pmTarget" style="left:70%"></div></div>
+        <div class="progress-label"><span id="plSpent">Rp 0</span><span id="plTarget">dari Rp 2.000.000</span></div>
+        <div class="progress-bar"><div class="progress-fill green" id="pfMain" style="width:0%"></div></div>
       </div>
       <div class="progress-wrap" style="margin-top:12px">
-        <div class="progress-label"><span>vs Batas Rp 500.000</span><span id="plPct2">0%</span></div>
+        <div class="progress-label"><span>Minggu ini</span><span id="plPct2">Rp 0 / Rp 500.000</span></div>
         <div class="progress-bar"><div class="progress-fill green" id="pfLimit" style="width:0%"></div></div>
       </div>
     </div>
     <div class="stats">
-      <div class="stat green"><div class="val" id="stSisa">Rp 350.000</div><div class="lbl">Sisa Target</div></div>
-      <div class="stat green"><div class="val" id="stTabung">Rp 0</div><div class="lbl">Potensi Tabungan</div></div>
+      <div class="stat green"><div class="val" id="stSisa">Rp 2.000.000</div><div class="lbl">Sisa Budget Bulan</div></div>
+      <div class="stat green"><div class="val" id="stTabung">Rp 0</div><div class="lbl">Total Keluar Bulan</div></div>
       <div class="stat"><div class="val" id="stTx">0</div><div class="lbl">Transaksi</div></div>
       <div class="stat"><div class="val" id="stAvg">Rp 0</div><div class="lbl">Rata-rata/Hari</div></div>
     </div>
@@ -183,7 +200,20 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
       <button onclick="changeMonth(1)">›</button>
     </div>
     <div class="card"><div class="card-title">Pengeluaran per Minggu</div><div id="weekSummary"></div></div>
-    <div id="summaryTotal" class="summary-total"><div class="sub">Total Potensi Tabungan Bulan Ini</div><div class="big" id="sumSaving">Rp 0</div></div>
+    <div id="summaryTotal" class="summary-total"><div class="sub">Sisa Budget Bulan Ini</div><div class="big" id="sumSaving">Rp 0</div></div>
+  </div>
+</div>
+
+<!-- Edit Modal -->
+<div class="modal-overlay" id="editModal">
+  <div class="modal" style="position:relative">
+    <button class="modal-close" onclick="closeEdit()">✕</button>
+    <div class="card-title">Edit Transaksi</div>
+    <div class="form-group"><label>Nominal (Rp)</label><input type="number" id="edNom" inputmode="numeric"></div>
+    <div class="form-group"><label>Kategori</label><select id="edKat"><option>Makan</option><option>Transport</option><option>Belanja</option><option>Hiburan</option><option>Lainnya</option></select></div>
+    <div class="form-group"><label>Catatan</label><textarea id="edNote"></textarea></div>
+    <div class="form-group"><label>Tanggal</label><input type="date" id="edDate"></div>
+    <button class="btn-primary" onclick="saveEdit()">💾 Simpan Perubahan</button>
   </div>
 </div>
 
@@ -197,22 +227,26 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
 </nav>
 
 <script>
-const TARGET=350000,LIMIT=500000;
+const BUDGET_MONTH=2000000,BUDGET_WEEK=500000;
 const CAT_ICONS={Makan:'🍽️',Transport:'🚗',Belanja:'🛒',Hiburan:'🎮',Lainnya:'📦'};
 const MONTHS=['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+const DAYS=['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
 let data=JSON.parse(localStorage.getItem('dompetku')||'[]');
 let filterCat='Semua';
-let viewMonth=new Date().getMonth(), viewYear=new Date().getFullYear();
+let viewMonth=new Date().getMonth(),viewYear=new Date().getFullYear();
+let editId=null;
 
 function save(){localStorage.setItem('dompetku',JSON.stringify(data))}
-function fmt(n){return 'Rp '+Number(n).toLocaleString('id-ID')}
+function fmt(n){return'Rp '+Number(n).toLocaleString('id-ID')}
 function getWeek(d){const day=d.getDate();if(day<=7)return 1;if(day<=14)return 2;if(day<=21)return 3;if(day<=28)return 4;return 5}
 function weekRange(w){return w===1?'1-7':w===2?'8-14':w===3?'15-21':w===4?'22-28':'29-31'}
 function daysInMonth(m,y){return new Date(y,m+1,0).getDate()}
 function weeksInMonth(m,y){return daysInMonth(m,y)>28?5:4}
-
 function getCurrentWeek(){return getWeek(new Date())}
-let activeWeekDash=getCurrentWeek(), activeWeekHist=getCurrentWeek();
+let activeWeekDash=getCurrentWeek(),activeWeekHist=getCurrentWeek();
+
+function getTxMonth(m,y){return data.filter(t=>{const d=new Date(t.date);return d.getMonth()===m&&d.getFullYear()===y})}
+function getTxForWeek(w,m,y){return data.filter(t=>{const d=new Date(t.date);return d.getMonth()===m&&d.getFullYear()===y&&getWeek(d)===w})}
 
 function showPage(id,el){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
@@ -226,11 +260,13 @@ function showPage(id,el){
 
 function buildWeekTabs(containerId,activeW,cb){
   const c=document.getElementById(containerId);
-  const now=new Date(), m=now.getMonth(), y=now.getFullYear();
+  const now=new Date(),m=now.getMonth(),y=now.getFullYear();
   const wc=weeksInMonth(m,y);
   let h='';
   for(let i=1;i<=wc;i++){
-    h+=`<div class="week-tab${i===activeW?' active':''}" onclick="(${cb.name})(${i})">Minggu ${i}<br><small style="font-weight:400;font-size:10px">Tgl ${weekRange(i)}</small></div>`;
+    const wtx=getTxForWeek(i,m,y);
+    const wtotal=wtx.reduce((s,t)=>s+t.amount,0);
+    h+=`<div class="week-tab${i===activeW?' active':''}" onclick="(${cb.name})(${i})">Minggu ${i}<br><small style="font-weight:400;font-size:10px">Tgl ${weekRange(i)} • ${fmt(wtotal)}</small></div>`;
   }
   c.innerHTML=h;
 }
@@ -238,66 +274,60 @@ function buildWeekTabs(containerId,activeW,cb){
 function setDashWeek(w){activeWeekDash=w;renderDash()}
 function setHistWeek(w){activeWeekHist=w;renderHistory()}
 
-function getTxForWeek(w,m,y){
-  return data.filter(t=>{
-    const d=new Date(t.date);
-    return d.getMonth()===m&&d.getFullYear()===y&&getWeek(d)===w;
-  });
-}
-
 function renderDash(){
   const now=new Date(),m=now.getMonth(),y=now.getFullYear();
   document.getElementById('headerDate').textContent=`${now.getDate()} ${MONTHS[m]} ${y} — Minggu ${getCurrentWeek()}`;
   buildWeekTabs('weekTabsDash',activeWeekDash,setDashWeek);
 
-  const txs=getTxForWeek(activeWeekDash,m,y);
-  const total=txs.reduce((s,t)=>s+t.amount,0);
-  const pctTarget=Math.min((total/TARGET)*100,100);
-  const pctLimit=Math.min((total/LIMIT)*100,100);
-  const sisa=Math.max(TARGET-total,0);
-  const tabung=total<=TARGET?TARGET-total:0;
+  const monthTx=getTxMonth(m,y);
+  const monthTotal=monthTx.reduce((s,t)=>s+t.amount,0);
+  const weekTx=getTxForWeek(activeWeekDash,m,y);
+  const weekTotal=weekTx.reduce((s,t)=>s+t.amount,0);
+
+  const pctMonth=Math.min((monthTotal/BUDGET_MONTH)*100,100);
+  const pctWeek=Math.min((weekTotal/BUDGET_WEEK)*100,100);
+  const sisaBulan=Math.max(BUDGET_MONTH-monthTotal,0);
 
   // Status
   const sb=document.getElementById('statusBanner');
   const st=document.getElementById('statusText');
-  if(total<=TARGET){sb.className='status-banner safe';st.textContent='Aman! Pengeluaranmu masih di bawah target hemat.';sb.querySelector('.icon').textContent='✅';}
-  else if(total<=LIMIT){sb.className='status-banner warn';st.textContent='Kamu melewati target hemat minggu ini, tapi masih dalam batas budget.';sb.querySelector('.icon').textContent='⚠️';}
+  if(weekTotal<=BUDGET_WEEK*0.7){sb.className='status-banner safe';st.textContent='Aman! Pengeluaran minggu ini terkendali.';sb.querySelector('.icon').textContent='✅';}
+  else if(weekTotal<=BUDGET_WEEK){sb.className='status-banner warn';st.textContent='Hati-hati! Pengeluaran minggu ini mendekati batas.';sb.querySelector('.icon').textContent='⚠️';}
   else{sb.className='status-banner danger';st.textContent='Budget minggu ini sudah terlampaui!';sb.querySelector('.icon').textContent='🚨';}
 
-  // Progress
+  // Month progress
   const pf=document.getElementById('pfMain');
-  pf.style.width=pctTarget+'%';
-  pf.className='progress-fill '+(total<=TARGET?'green':total<=LIMIT?'yellow':'red');
-  document.getElementById('plSpent').textContent=fmt(total);
-  document.getElementById('pmTarget').style.left='70%';
+  pf.style.width=pctMonth+'%';
+  pf.className='progress-fill '+(monthTotal<=BUDGET_MONTH*0.7?'green':monthTotal<=BUDGET_MONTH?'yellow':'red');
+  document.getElementById('plSpent').textContent=fmt(monthTotal);
 
+  // Week progress
   const pf2=document.getElementById('pfLimit');
-  pf2.style.width=pctLimit+'%';
-  pf2.className='progress-fill '+(total<=TARGET?'green':total<=LIMIT?'yellow':'red');
-  document.getElementById('plPct2').textContent=Math.round(pctLimit)+'%';
+  pf2.style.width=pctWeek+'%';
+  pf2.className='progress-fill '+(weekTotal<=BUDGET_WEEK*0.7?'green':weekTotal<=BUDGET_WEEK?'yellow':'red');
+  document.getElementById('plPct2').textContent=fmt(weekTotal)+' / '+fmt(BUDGET_WEEK);
 
   // Stats
-  document.getElementById('stSisa').textContent=fmt(sisa);
-  document.getElementById('stTabung').textContent=fmt(tabung);
-  document.getElementById('stTx').textContent=txs.length;
+  document.getElementById('stSisa').textContent=fmt(sisaBulan);
+  document.getElementById('stTabung').textContent=fmt(monthTotal);
+  document.getElementById('stTx').textContent=weekTx.length;
   const days=activeWeekDash===5?daysInMonth(m,y)-28:7;
-  document.getElementById('stAvg').textContent=fmt(txs.length?Math.round(total/days):0);
+  document.getElementById('stAvg').textContent=fmt(weekTx.length?Math.round(weekTotal/days):0);
 
-  // Stat colors
   const sisStat=document.getElementById('stSisa').parentElement;
-  sisStat.className='stat '+(total<=TARGET?'green':total<=LIMIT?'yellow':'red');
+  sisStat.className='stat '+(sisaBulan>BUDGET_MONTH*0.3?'green':sisaBulan>0?'yellow':'red');
   const tabStat=document.getElementById('stTabung').parentElement;
-  tabStat.className='stat '+(tabung>0?'green':'');
+  tabStat.className='stat red';
 
-  // Category breakdown
+  // Category
   const cats={};
-  txs.forEach(t=>{cats[t.category]=(cats[t.category]||0)+t.amount});
+  weekTx.forEach(t=>{cats[t.category]=(cats[t.category]||0)+t.amount});
   let ch='';
-  if(Object.keys(cats).length===0){ch='<div class="empty"><p>Belum ada pengeluaran</p></div>';}
+  if(!Object.keys(cats).length){ch='<div class="empty"><p>Belum ada pengeluaran minggu ini</p></div>';}
   else{
     const sorted=Object.entries(cats).sort((a,b)=>b[1]-a[1]);
     sorted.forEach(([k,v])=>{
-      const pct=total?Math.round(v/total*100):0;
+      const pct=weekTotal?Math.round(v/weekTotal*100):0;
       ch+=`<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">
         <span style="font-size:20px">${CAT_ICONS[k]||'📦'}</span>
         <div style="flex:1"><div style="font-size:13px;font-weight:600">${k}</div>
@@ -312,31 +342,58 @@ function renderDash(){
 function addTx(){
   const nom=parseInt(document.getElementById('inNominal').value);
   if(!nom||nom<=0){alert('Masukkan nominal yang valid!');return}
-  const tx={
-    id:Date.now(),
-    amount:nom,
-    category:document.getElementById('inKat').value,
-    note:document.getElementById('inNote').value.trim(),
-    date:document.getElementById('inDate').value
-  };
+  const dt=document.getElementById('inDate').value;
+  if(!dt){alert('Pilih tanggal!');return}
+  const tx={id:Date.now(),amount:nom,category:document.getElementById('inKat').value,note:document.getElementById('inNote').value.trim(),date:dt};
   data.push(tx);save();
   document.getElementById('inNominal').value='';
   document.getElementById('inNote').value='';
-  // Toast
-  const t=document.getElementById('toast');t.classList.add('show');
+  const t=document.getElementById('toast');t.textContent='✅ Berhasil disimpan!';t.classList.add('show');
   setTimeout(()=>t.classList.remove('show'),2000);
 }
 
 function deleteTx(id){
   if(!confirm('Hapus transaksi ini?'))return;
-  data=data.filter(t=>t.id!==id);save();renderHistory();
+  data=data.filter(t=>t.id!==id);save();
+  renderHistory();renderDash();
+}
+
+function openEdit(id){
+  const tx=data.find(t=>t.id===id);
+  if(!tx)return;
+  editId=id;
+  document.getElementById('edNom').value=tx.amount;
+  document.getElementById('edKat').value=tx.category;
+  document.getElementById('edNote').value=tx.note||'';
+  document.getElementById('edDate').value=tx.date;
+  document.getElementById('editModal').classList.add('show');
+}
+
+function closeEdit(){
+  document.getElementById('editModal').classList.remove('show');
+  editId=null;
+}
+
+function saveEdit(){
+  if(!editId)return;
+  const nom=parseInt(document.getElementById('edNom').value);
+  if(!nom||nom<=0){alert('Nominal tidak valid!');return}
+  const idx=data.findIndex(t=>t.id===editId);
+  if(idx===-1)return;
+  data[idx].amount=nom;
+  data[idx].category=document.getElementById('edKat').value;
+  data[idx].note=document.getElementById('edNote').value.trim();
+  data[idx].date=document.getElementById('edDate').value;
+  save();closeEdit();
+  renderHistory();renderDash();
+  const t=document.getElementById('toast');t.textContent='✅ Berhasil diupdate!';t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2000);
 }
 
 function renderHistory(){
   const now=new Date(),m=now.getMonth(),y=now.getFullYear();
   buildWeekTabs('weekTabsHist',activeWeekHist,setHistWeek);
 
-  // Filter pills
   const allCats=['Semua','Makan','Transport','Belanja','Hiburan','Lainnya'];
   let ph='';
   allCats.forEach(c=>{ph+=`<div class="cat-pill${c===filterCat?' active':''}" onclick="filterCat='${c}';renderHistory()">${c}</div>`;});
@@ -344,22 +401,44 @@ function renderHistory(){
 
   let txs=getTxForWeek(activeWeekHist,m,y);
   if(filterCat!=='Semua')txs=txs.filter(t=>t.category===filterCat);
-  txs.sort((a,b)=>new Date(b.date)-new Date(a.date)||b.id-a.id);
+  txs.sort((a,b)=>new Date(a.date)-new Date(b.date)||a.id-b.id);
 
   if(!txs.length){
     document.getElementById('txList').innerHTML='<div class="empty"><div class="em-icon">📭</div><p>Belum ada transaksi minggu ini</p></div>';
     return;
   }
-  let h='';
+
+  // Group by date
+  const groups={};
   txs.forEach(t=>{
-    const d=new Date(t.date);
-    const ds=d.getDate()+' '+MONTHS[d.getMonth()].slice(0,3);
-    h+=`<div class="tx-item">
-      <div class="tx-icon ${t.category}">${CAT_ICONS[t.category]||'📦'}</div>
-      <div class="tx-info"><div class="name">${t.note||t.category}</div><div class="meta">${t.category} • ${ds}</div></div>
-      <div class="tx-amount">-${fmt(t.amount)}</div>
-      <button class="tx-del" onclick="deleteTx(${t.id})">✕</button>
-    </div>`;
+    const key=t.date;
+    if(!groups[key])groups[key]=[];
+    groups[key].push(t);
+  });
+
+  let h='';
+  Object.keys(groups).sort().forEach(dateKey=>{
+    const d=new Date(dateKey);
+    const dayName=DAYS[d.getDay()];
+    const dayNum=d.getDate();
+    const monthName=MONTHS[d.getMonth()].slice(0,3);
+    const dayTotal=groups[dateKey].reduce((s,t)=>s+t.amount,0);
+
+    h+=`<div class="date-group">
+      <div class="date-header"><span>📅 ${dayName}, ${dayNum} ${monthName}</span><span class="dtotal">-${fmt(dayTotal)}</span></div>`;
+
+    groups[dateKey].forEach(t=>{
+      h+=`<div class="tx-item">
+        <div class="tx-icon ${t.category}">${CAT_ICONS[t.category]||'📦'}</div>
+        <div class="tx-info"><div class="name">${t.note||t.category}</div><div class="meta">${t.category}</div></div>
+        <div class="tx-amount">-${fmt(t.amount)}</div>
+        <div class="tx-actions">
+          <button class="tx-btn edit" onclick="openEdit(${t.id})" title="Edit">✏️</button>
+          <button class="tx-btn del" onclick="deleteTx(${t.id})" title="Hapus">🗑️</button>
+        </div>
+      </div>`;
+    });
+    h+=`</div>`;
   });
   document.getElementById('txList').innerHTML=h;
 }
@@ -367,17 +446,19 @@ function renderHistory(){
 function renderSummary(){
   document.getElementById('monthLabel').textContent=MONTHS[viewMonth]+' '+viewYear;
   const wc=weeksInMonth(viewMonth,viewYear);
-  let h='',totalSaving=0;
+  const monthTx=getTxMonth(viewMonth,viewYear);
+  const monthTotal=monthTx.reduce((s,t)=>s+t.amount,0);
+  let h='';
   for(let w=1;w<=wc;w++){
     const txs=getTxForWeek(w,viewMonth,viewYear);
     const total=txs.reduce((s,t)=>s+t.amount,0);
-    const saving=Math.max(TARGET-total,0);
-    totalSaving+=saving;
-    const color=total<=TARGET?'var(--green)':total<=LIMIT?'var(--yellow)':'var(--red)';
+    const color=total<=BUDGET_WEEK*0.7?'var(--green)':total<=BUDGET_WEEK?'var(--yellow)':'var(--red)';
     h+=`<div class="month-row"><span class="wk">Minggu ${w} <small style="color:var(--text2);font-weight:400">(Tgl ${weekRange(w)})</small></span><span class="amt" style="color:${color}">${fmt(total)}</span></div>`;
   }
   document.getElementById('weekSummary').innerHTML=h||'<div class="empty"><p>Tidak ada data</p></div>';
-  document.getElementById('sumSaving').textContent=fmt(totalSaving);
+
+  const sisa=Math.max(BUDGET_MONTH-monthTotal,0);
+  document.getElementById('sumSaving').textContent=fmt(sisa);
 }
 
 function changeMonth(dir){
@@ -389,6 +470,7 @@ function changeMonth(dir){
 
 // Init
 document.getElementById('inDate').value=new Date().toISOString().split('T')[0];
+document.getElementById('editModal').addEventListener('click',function(e){if(e.target===this)closeEdit()});
 renderDash();
 </script>
 </body>
